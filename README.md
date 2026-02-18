@@ -197,7 +197,7 @@ If the answer is not found in context, the system prevents hallucination by retu
 ## Future Improvements
 
 - Streaming token responses ✅
-- Source document citations
+- Source document citations ✅
 - Support for additional file types (DOCX, CSV)
 - Hybrid search (BM25 + Vector Search)
 - Multi-model switching
