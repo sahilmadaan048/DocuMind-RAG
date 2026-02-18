@@ -128,112 +128,42 @@ def create_vector_store(chunks):
 # LOAD LCEL RAG CHAIN (RETURNS ANSWER + SOURCES)
 from langchain_core.runnables import RunnableMap
 
+def load_rag_chain(selected_model):
 
-# def load_rag_chain():
-
-#     embeddings = GoogleGenerativeAIEmbeddings(
-#         model="gemini-embedding-001"
-#     )
-
-#     db = FAISS.load_local(
-#         "faiss_index",
-#         embeddings,
-#         allow_dangerous_deserialization=True
-#     )
-
-#     # VECTOR RETRIEVER (Semantic Search)
-#     vector_retriever = db.as_retriever(search_kwargs={"k": 4})
-
-#     # BM25 RETRIEVER (Keyword Search)
-#     docs = db.similarity_search("", k=1000)  # load all indexed docs
-#     bm25_retriever = BM25Retriever.from_documents(docs)
-#     bm25_retriever.k = 4
-
-#     # HYBRID RETRIEVER (Weighted Combination)
-#     hybrid_retriever = EnsembleRetriever(
-#         retrievers=[vector_retriever, bm25_retriever],
-#         weights=[0.7, 0.33] # 70 % semantic, 30 ^ keyword
-#     )
-
-#     llm = ChatGoogleGenerativeAI(
-#         model="gemini-2.5-flash",
-#         temperature=0.3,
-#         streaming=True
-#     )
-
-#     prompt = ChatPromptTemplate.from_template("""
-# You are an AI assistant answering questions strictly based on provided context.
-
-# If the answer is not found in the context, respond with:
-# "Answer not available in the provided documents."
-
-# Context:
-# {context}
-
-# Question:
-# {question}
-# """)
-
-#     def format_docs(docs):
-#         return "\n\n".join(doc.page_content for doc in docs)
-
-#     # Step 1: Retrieve context
-#     retrieval_chain = RunnableMap({
-#         "context": hybrid_retriever,
-#         "question": RunnablePassthrough()
-#     })
-
-#     # Step 2: Generate answer
-#     answer_chain = (
-#         RunnableMap({
-#             "context": lambda x: format_docs(x["context"]),
-#             "question": lambda x: x["question"]
-#         })
-#         | prompt
-#         | llm
-#         | StrOutputParser()
-#     )
-
-#     # Step 3: Combine answer + sources
-#     final_chain = retrieval_chain.assign(
-#         answer=answer_chain,
-#         sources=lambda x: x["context"]
-#     )
-
-#     return final_chain
-
-def load_rag_chain():
-
+    # Load embeddings
     embeddings = GoogleGenerativeAIEmbeddings(
         model="gemini-embedding-001"
     )
 
+    # Load FAISS index
     db = FAISS.load_local(
         "faiss_index",
         embeddings,
         allow_dangerous_deserialization=True
     )
 
-    # VECTOR RETRIEVER (Semantic Search)
+    # Semantic Retriever
     vector_retriever = db.as_retriever(search_kwargs={"k": 4})
 
-    # BM25 RETRIEVER (Keyword Search)
-    docs = list(db.docstore._dict.values())  # Load all indexed docs safely
+    # BM25 Keyword Retriever
+    docs = list(db.docstore._dict.values())
     bm25_retriever = BM25Retriever.from_documents(docs)
     bm25_retriever.k = 4
 
-    # HYBRID RETRIEVER (Weighted Combination)
+    # Hybrid Retriever (Weighted)
     hybrid_retriever = EnsembleRetriever(
         retrievers=[vector_retriever, bm25_retriever],
-        weights=[0.6, 0.4]  # 60% semantic, 40% keyword
+        weights=[0.6, 0.4]
     )
 
+    # Dynamic LLM (Multi-Model)
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=selected_model,
         temperature=0.3,
         streaming=True
     )
 
+    # Prompt Template
     prompt = ChatPromptTemplate.from_template("""
 You are an AI assistant answering questions strictly based on provided context.
 
@@ -250,13 +180,13 @@ Question:
     def format_docs(docs):
         return "\n\n".join(doc.page_content for doc in docs)
 
-    # Step 1: Retrieve context (HYBRID)
+    # Step 1: Retrieve Context
     retrieval_chain = RunnableMap({
         "context": hybrid_retriever,
         "question": RunnablePassthrough()
     })
 
-    # Step 2: Generate answer
+    # Step 2: Generate Answer
     answer_chain = (
         RunnableMap({
             "context": lambda x: format_docs(x["context"]),
@@ -267,7 +197,7 @@ Question:
         | StrOutputParser()
     )
 
-    # Step 3: Combine answer + sources
+    # Step 3: Combine Answer + Sources
     final_chain = retrieval_chain.assign(
         answer=answer_chain,
         sources=lambda x: x["context"]
@@ -293,7 +223,6 @@ def main():
     # USER QUESTION INPUT
     question = st.text_input("Ask a question about your documents")
 
-    # PROCESS QUESTION
     if question.strip() and st.session_state.rag_chain:
 
         result = st.session_state.rag_chain.invoke(question)
@@ -301,7 +230,7 @@ def main():
         st.write("### Response")
         st.write(result["answer"])
 
-        # DISPLAY SOURCE CITATIONS
+        # Display Sources
         st.write("### Sources")
 
         unique_sources = set()
@@ -316,6 +245,30 @@ def main():
     # SIDEBAR
     with st.sidebar:
 
+        # Model Selection
+        st.header("Model Settings")
+
+        available_models = [
+            "gemini-2.5-flash",
+            "gemini-2.5-pro",
+            "gemini-2.0-flash-001"
+        ]
+
+        selected_model = st.selectbox(
+            "Select LLM Model",
+            available_models
+        )
+
+        # Track model change
+        if "current_model" not in st.session_state:
+            st.session_state.current_model = selected_model
+
+        if st.session_state.current_model != selected_model:
+            st.session_state.current_model = selected_model
+            if os.path.exists("faiss_index"):
+                st.session_state.rag_chain = load_rag_chain(selected_model)
+
+        # Document Upload
         st.header("Upload Documents")
 
         uploaded_files = st.file_uploader(
@@ -344,16 +297,16 @@ def main():
 
                     if csv_files:
                         documents.extend(extract_csv_documents(csv_files))
-                
+
                     chunks = split_documents(documents)
                     create_vector_store(chunks)
 
-                    st.session_state.rag_chain = load_rag_chain()
+                    st.session_state.rag_chain = load_rag_chain(selected_model)
 
                 st.success("Documents processed successfully.")
 
             else:
-                st.warning("Please upload at least one PDF.")
+                st.warning("Please upload at least one document.")
 
 
 # RUN APPLICATION
