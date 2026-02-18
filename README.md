@@ -12,7 +12,7 @@
 
 ## Application Preview
 
-![DocuMind-RAG Demo](images/working.png)
+![DocuMind-RAG Demo](images/working2.png)
 
 ---
 
@@ -24,12 +24,12 @@ The system extracts content from uploaded documents, generates embeddings, store
 
 This project demonstrates practical implementation of:
 
-* Vector Databases
-* Embeddings & Semantic Search
-* Retrieval Augmented Generation (RAG)
-* LangChain Expression Language (LCEL)
-* LLM Orchestration
-* Conversational AI Systems
+- Vector Databases
+- Embeddings & Semantic Search
+- Retrieval Augmented Generation (RAG)
+- LangChain Expression Language (LCEL)
+- LLM Orchestration
+- Conversational AI Systems
 
 ---
 
@@ -39,11 +39,11 @@ Large Language Models (LLMs) do not have access to private or real-time data by 
 
 This project demonstrates how Retrieval Augmented Generation (RAG) enables:
 
-* Grounded responses from private documents
-* Reduced hallucination
-* Context-aware reasoning
-* Scalable semantic search
-* Production-ready GenAI pipelines
+- Grounded responses from private documents
+- Reduced hallucination
+- Context-aware reasoning
+- Scalable semantic search
+- Production-ready GenAI pipelines
 
 It reflects practical system design beyond simple chatbot implementations.
 
@@ -68,26 +68,26 @@ User Query → Query Embedding → Similarity Search → Context Retrieval → G
 
 ## Features
 
-* Multi-PDF document support
-* Retrieval Augmented Generation (RAG)
-* FAISS vector database for efficient similarity search
-* Google Gemini integration
-* LangChain LCEL pipeline implementation
-* Streamlit-based interactive UI
-* Local vector store persistence
-* Modular and extensible architecture
+- Multi-PDF document support
+- Retrieval Augmented Generation (RAG)
+- FAISS vector database for efficient similarity search
+- Google Gemini integration
+- LangChain LCEL pipeline implementation
+- Streamlit-based interactive UI
+- Local vector store persistence
+- Modular and extensible architecture
 
 ---
 
 ## Tech Stack
 
-* Python
-* Streamlit
-* LangChain (LCEL)
-* Google Gemini (`langchain-google-genai`)
-* FAISS (Facebook AI Similarity Search)
-* PyPDF2
-* python-dotenv
+- Python
+- Streamlit
+- LangChain (LCEL)
+- Google Gemini (`langchain-google-genai`)
+- FAISS (Facebook AI Similarity Search)
+- PyPDF2
+- python-dotenv
 
 ---
 
@@ -162,19 +162,19 @@ Upload one or more PDF documents from the sidebar.
 
 ### Step 2: Document Processing
 
-* Text is extracted using PyPDF2
-* Text is split into semantic chunks using RecursiveCharacterTextSplitter
-* Embeddings are generated using Google Gemini Embedding Model
-* Chunks are stored in a FAISS vector database
+- Text is extracted using PyPDF2
+- Text is split into semantic chunks using RecursiveCharacterTextSplitter
+- Embeddings are generated using Google Gemini Embedding Model
+- Chunks are stored in a FAISS vector database
 
 ### Step 3: Ask Questions
 
 When a question is asked:
 
-* The query is embedded
-* Top-K similar chunks are retrieved using semantic similarity
-* Retrieved context is passed to Gemini
-* The model generates a grounded response
+- The query is embedded
+- Top-K similar chunks are retrieved using semantic similarity
+- Retrieved context is passed to Gemini
+- The model generates a grounded response
 
 If the answer is not found in context, the system prevents hallucination by returning:
 
@@ -184,36 +184,36 @@ If the answer is not found in context, the system prevents hallucination by retu
 
 ## Retrieval Strategy
 
-* Text Splitter: RecursiveCharacterTextSplitter
-* Chunk Size: 2000
-* Chunk Overlap: 100
-* Top-K Retrieval: 4
-* Vector Store: FAISS (Local Persistent Storage)
-* LLM Model: Gemini 2.5 Flash
-* Embedding Model: Gemini Embedding 001
+- Text Splitter: RecursiveCharacterTextSplitter
+- Chunk Size: 2000
+- Chunk Overlap: 100
+- Top-K Retrieval: 4
+- Vector Store: FAISS (Local Persistent Storage)
+- LLM Model: Gemini 2.5 Flash
+- Embedding Model: Gemini Embedding 001
 
 ---
 
 ## Future Improvements
 
-* Streaming token responses
-* Source document citations
-* Support for additional file types (DOCX, CSV)
-* Hybrid search (BM25 + Vector Search)
-* Multi-model switching
-* Docker deployment
-* Cloud-hosted vector database (Pinecone, Weaviate)
-* Conversation memory integration
+- Streaming token responses ✅
+- Source document citations
+- Support for additional file types (DOCX, CSV)
+- Hybrid search (BM25 + Vector Search)
+- Multi-model switching
+- Docker deployment
+- Cloud-hosted vector database (Pinecone, Weaviate)
+- Conversation memory integration
 
 ---
 
 ## Use Cases
 
-* Research paper analysis
-* Legal document exploration
-* Enterprise knowledge base assistant
-* Technical documentation assistant
-* Academic study assistant
+- Research paper analysis
+- Legal document exploration
+- Enterprise knowledge base assistant
+- Technical documentation assistant
+- Academic study assistant
 
 ---
 
