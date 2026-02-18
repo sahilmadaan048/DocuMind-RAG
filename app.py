@@ -11,11 +11,65 @@ from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.documents import Document
-
+import pandas as pd
+from docx import Document as DocxDocument
 
 # LOAD ENVIRONMENT VARIABLES
 load_dotenv()
 os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+
+
+# DOCX extraction
+def extract_docx_documents(docx_files):
+    documents = []
+
+    for file in docx_files:
+        doc = DocxDocument(file)
+        full_text = []
+
+        for para in doc.paragraphs:
+            if para.text.strip():
+                full_text.append(para.text)
+
+        content = "\n".join(full_text)
+
+        if content:
+            documents.append(
+                Document(
+                    page_content=content,
+                    metadata={
+                        "source": file.name,
+                        "page": 1  # DOCX treated as single page
+                    }
+                )
+            )
+
+    return documents
+
+
+# CSV extraction
+def extract_csv_documents(csv_files):
+    documents = []
+
+    for file in csv_files:
+        df = pd.read_csv(file)
+
+        for index, row in df.iterrows():
+            row_text = ", ".join(
+                f"{col}: {row[col]}" for col in df.columns
+            )
+
+            documents.append(
+                Document(
+                    page_content=row_text,
+                    metadata={
+                        "source": file.name,
+                        "page": index + 1  # row number
+                    }
+                )
+            )
+
+    return documents
 
 
 # PDF DOCUMENT EXTRACTION WITH METADATA (SOURCE + PAGE)
@@ -175,18 +229,33 @@ def main():
 
         st.header("Upload Documents")
 
-        pdf_files = st.file_uploader(
-            "Upload PDF Files",
+        uploaded_files = st.file_uploader(
+            "Upload Documents (PDF, DOCX, CSV)",
+            type=["pdf", "docx", "csv"],
             accept_multiple_files=True
         )
 
         if st.button("Process Documents"):
 
-            if pdf_files:
+            if uploaded_files:
 
                 with st.spinner("Processing Documents..."):
 
-                    documents = extract_pdf_documents(pdf_files)
+                    documents = []
+
+                    pdf_files = [f for f in uploaded_files if f.name.endswith(".pdf")]
+                    docx_files = [f for f in uploaded_files if f.name.endswith(".docx")]
+                    csv_files = [f for f in uploaded_files if f.name.endswith(".csv")]
+
+                    if pdf_files:
+                        documents.extend(extract_pdf_documents(pdf_files))
+
+                    if docx_files:
+                        documents.extend(extract_docx_documents(docx_files))
+
+                    if csv_files:
+                        documents.extend(extract_csv_documents(csv_files))
+                
                     chunks = split_documents(documents)
                     create_vector_store(chunks)
 

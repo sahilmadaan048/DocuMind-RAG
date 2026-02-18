@@ -198,7 +198,7 @@ If the answer is not found in context, the system prevents hallucination by retu
 
 - Streaming token responses ✅
 - Source document citations ✅
-- Support for additional file types (DOCX, CSV)
+- Support for additional file types (DOCX, CSV) ✅
 - Hybrid search (BM25 + Vector Search)
 - Multi-model switching
 - Docker deployment
