@@ -14,6 +14,10 @@ from langchain_core.documents import Document
 import pandas as pd
 from docx import Document as DocxDocument
 
+from langchain_community.retrievers import BM25Retriever
+from langchain_classic.retrievers.ensemble import EnsembleRetriever
+
+
 # LOAD ENVIRONMENT VARIABLES
 load_dotenv()
 os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
@@ -125,6 +129,79 @@ def create_vector_store(chunks):
 from langchain_core.runnables import RunnableMap
 
 
+# def load_rag_chain():
+
+#     embeddings = GoogleGenerativeAIEmbeddings(
+#         model="gemini-embedding-001"
+#     )
+
+#     db = FAISS.load_local(
+#         "faiss_index",
+#         embeddings,
+#         allow_dangerous_deserialization=True
+#     )
+
+#     # VECTOR RETRIEVER (Semantic Search)
+#     vector_retriever = db.as_retriever(search_kwargs={"k": 4})
+
+#     # BM25 RETRIEVER (Keyword Search)
+#     docs = db.similarity_search("", k=1000)  # load all indexed docs
+#     bm25_retriever = BM25Retriever.from_documents(docs)
+#     bm25_retriever.k = 4
+
+#     # HYBRID RETRIEVER (Weighted Combination)
+#     hybrid_retriever = EnsembleRetriever(
+#         retrievers=[vector_retriever, bm25_retriever],
+#         weights=[0.7, 0.33] # 70 % semantic, 30 ^ keyword
+#     )
+
+#     llm = ChatGoogleGenerativeAI(
+#         model="gemini-2.5-flash",
+#         temperature=0.3,
+#         streaming=True
+#     )
+
+#     prompt = ChatPromptTemplate.from_template("""
+# You are an AI assistant answering questions strictly based on provided context.
+
+# If the answer is not found in the context, respond with:
+# "Answer not available in the provided documents."
+
+# Context:
+# {context}
+
+# Question:
+# {question}
+# """)
+
+#     def format_docs(docs):
+#         return "\n\n".join(doc.page_content for doc in docs)
+
+#     # Step 1: Retrieve context
+#     retrieval_chain = RunnableMap({
+#         "context": hybrid_retriever,
+#         "question": RunnablePassthrough()
+#     })
+
+#     # Step 2: Generate answer
+#     answer_chain = (
+#         RunnableMap({
+#             "context": lambda x: format_docs(x["context"]),
+#             "question": lambda x: x["question"]
+#         })
+#         | prompt
+#         | llm
+#         | StrOutputParser()
+#     )
+
+#     # Step 3: Combine answer + sources
+#     final_chain = retrieval_chain.assign(
+#         answer=answer_chain,
+#         sources=lambda x: x["context"]
+#     )
+
+#     return final_chain
+
 def load_rag_chain():
 
     embeddings = GoogleGenerativeAIEmbeddings(
@@ -137,7 +214,19 @@ def load_rag_chain():
         allow_dangerous_deserialization=True
     )
 
-    retriever = db.as_retriever(search_kwargs={"k": 4})
+    # VECTOR RETRIEVER (Semantic Search)
+    vector_retriever = db.as_retriever(search_kwargs={"k": 4})
+
+    # BM25 RETRIEVER (Keyword Search)
+    docs = list(db.docstore._dict.values())  # Load all indexed docs safely
+    bm25_retriever = BM25Retriever.from_documents(docs)
+    bm25_retriever.k = 4
+
+    # HYBRID RETRIEVER (Weighted Combination)
+    hybrid_retriever = EnsembleRetriever(
+        retrievers=[vector_retriever, bm25_retriever],
+        weights=[0.6, 0.4]  # 60% semantic, 40% keyword
+    )
 
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
@@ -161,9 +250,9 @@ Question:
     def format_docs(docs):
         return "\n\n".join(doc.page_content for doc in docs)
 
-    # Step 1: Retrieve context
+    # Step 1: Retrieve context (HYBRID)
     retrieval_chain = RunnableMap({
-        "context": retriever,
+        "context": hybrid_retriever,
         "question": RunnablePassthrough()
     })
 
@@ -205,7 +294,7 @@ def main():
     question = st.text_input("Ask a question about your documents")
 
     # PROCESS QUESTION
-    if question and st.session_state.rag_chain:
+    if question.strip() and st.session_state.rag_chain:
 
         result = st.session_state.rag_chain.invoke(question)
 
