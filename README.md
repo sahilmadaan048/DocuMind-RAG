@@ -14,6 +14,10 @@
 
 ![DocuMind-RAG Demo](images/working2.png)
 
+
+
+![DocuMind-RAG Demo](images/multiple_models.png)
+
 ---
 
 ## Overview
