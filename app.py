@@ -6,7 +6,7 @@ from PyPDF2 import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 
-from langchain_community.vectorstores import FAISS
+# from langchain_community.vectorstores import FAISS
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -17,11 +17,13 @@ from docx import Document as DocxDocument
 from langchain_community.retrievers import BM25Retriever
 from langchain_classic.retrievers.ensemble import EnsembleRetriever
 
+from pinecone import Pinecone, ServerlessSpec
+import os
+
 
 # LOAD ENVIRONMENT VARIABLES
 load_dotenv()
 os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
-
 
 # DOCX extraction
 def extract_docx_documents(docx_files):
@@ -117,12 +119,15 @@ def create_vector_store(chunks):
         model="gemini-embedding-001"
     )
 
-    vector_store = FAISS.from_documents(
-        chunks,
+    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+    index = pc.Index(os.getenv("PINECONE_INDEX_NAME"))
+
+    vector_store = PineconeVectorStore(
+        index=index,
         embedding=embeddings
     )
 
-    vector_store.save_local("faiss_index")
+    vector_store.add_documents(chunks)
 
 
 # LOAD LCEL RAG CHAIN (RETURNS ANSWER + SOURCES)
@@ -135,13 +140,13 @@ def load_rag_chain(selected_model):
         model="gemini-embedding-001"
     )
 
-    # Load FAISS index
-    db = FAISS.load_local(
-        "faiss_index",
-        embeddings,
-        allow_dangerous_deserialization=True
-    )
+    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+    index = pc.Index(os.getenv("PINECONE_INDEX_NAME"))
 
+    db = PineconeVectorStore(
+        index=index,
+        embedding=embeddings
+    )
     # Semantic Retriever
     vector_retriever = db.as_retriever(search_kwargs={"k": 4})
 

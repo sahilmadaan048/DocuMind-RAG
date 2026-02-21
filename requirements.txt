@@ -13,3 +13,6 @@ PyPDF2
 python-dotenv
 pandas
 python-docx
+
+pinecone
+langchain-pinecone
