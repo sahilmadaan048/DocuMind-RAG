@@ -12,8 +12,9 @@
 
 ## Application Preview
 
-![DocuMind-RAG Demo](images/working2.png)
+![DocuMind-RAG Demo](images/finally_done.png)
 
+![DocuMind-RAG Demo](images/working2.png)
 
 
 ![DocuMind-RAG Demo](images/multiple_models.png)
@@ -207,7 +208,7 @@ If the answer is not found in context, the system prevents hallucination by retu
 - Multi-model switching ✅
 - Docker deployment ✅
 - Cloud-hosted vector database (Pinecone, Weaviate) ✅
-- Conversation memory integration
+- Conversation memory integration ✅
 
 ---
 
